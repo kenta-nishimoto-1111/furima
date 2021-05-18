@@ -1,6 +1,8 @@
 class ItemsController < ApplicationController
   before_action :authenticate_user!, only: [:new, :create]
  # deviseのヘルパーメソッド。ログインしていなければ、ログイン画面へ遷移させる。
+ before_action :set_item, only:[ :show , :edit , :update ] # 追加
+ before_action :move_to_index, only:[ :edit , :update ] # 追加
 
   def index
     @items = Item.includes(:user).order("created_at DESC")
@@ -22,7 +24,18 @@ class ItemsController < ApplicationController
   end
 
   def show
-    @item = Item.find(params[:id])
+  end
+
+  def edit
+  end
+  
+  def update
+    @item.update(item_params)
+    if @item.valid?
+      redirect_to item_path(@item)
+    else
+      render 'edit'
+    end
   end
 
   private
@@ -41,6 +54,14 @@ class ItemsController < ApplicationController
     ).merge(user_id: current_user.id)
   # ストロングパラメーターの設定も受講生によって名前が異なります。
   # ActiveHashの設定を確認しましょう。
+  end
+
+  def set_item  # 追加
+    @item = Item.find(params[:id])
+  end
+  
+  def move_to_index # 追加
+    return redirect_to root_path if current_user.id != @item.user.id
   end
 
 end
