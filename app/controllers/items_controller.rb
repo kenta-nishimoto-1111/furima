@@ -1,25 +1,32 @@
 class ItemsController < ApplicationController
-  before_action :authenticate_user!, only: [:new, :create]
- # deviseのヘルパーメソッド。ログインしていなければ、ログイン画面へ遷移させる。
- before_action :set_item, only:[ :show , :edit , :update ] # 追加
- before_action :move_to_index, only:[ :edit , :update ] # 追加
+  before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
+  # deviseのヘルパーメソッド。ログインしていなければ、ログイン画面へ遷移させる。
+
+  before_action :set_item, only:[ :show , :edit , :update ,:destroy ]
+  # リファクタリング① すでに保存されたデータを取り出す記述
+
+  before_action :move_to_index, only:[ :edit , :update , :destory]
+  # リファクタリング② ログインしているユーザーと@itemのユーザーの一致確認
+  # 異なる場合はトップページへ遷移させる
 
   def index
     @items = Item.includes(:user).order("created_at DESC")
   end
+  # 一覧機能 出品された順番に表示を行うため、.order以降の記述を追加
 
-  def new
-    # form_withで使用するために設定する
-    @item = Item.new
+  def new 
+  @item = Item.new
+  # form_withで使用するために設定する
   end
 
   def create
     @item = Item.new(item_params)
-    # バリデーションで問題があれば、保存はされず「商品出品画面」を再描画
-    if @item.save
+    if @item.valid?
+      @item.save
       return redirect_to root_path
     end
-    # アクションのnewをコールすると、エラーメッセージが入った@itemが上書きされてしまうので注意しましょう。
+    # バリデーションで問題があれば、保存はされず「商品出品画面」を再描画
+    # アクションのnewをコールすると、エラーメッセージが入った@itemが上書きされてしまうので注意
     render 'new'
   end
 
@@ -28,14 +35,21 @@ class ItemsController < ApplicationController
 
   def edit
   end
-  
+
   def update
     @item.update(item_params)
+
     if @item.valid?
       redirect_to item_path(@item)
     else
       render 'edit'
+      # バリデーションで問題があれば、保存はされず「商品編集画面」を再描画
     end
+  end
+
+  def destroy
+    @item.destroy 
+    redirect_to root_path
   end
 
   private
@@ -52,16 +66,18 @@ class ItemsController < ApplicationController
       :scheduled_delivery_id,
       :price
     ).merge(user_id: current_user.id)
-  # ストロングパラメーターの設定も受講生によって名前が異なります。
-  # ActiveHashの設定を確認しましょう。
+    # ストロングパラメーターの設定も受講生によって名前が異なります。
+    # ActiveHashの設定を確認しましょう。
   end
 
-  def set_item  # 追加
+  def set_item
     @item = Item.find(params[:id])
-  end
-  
-  def move_to_index # 追加
-    return redirect_to root_path if current_user.id != @item.user.id
+    # リファクタリング① すでに保存されたデータを取り出す記述
   end
 
+  def move_to_index
+    return redirect_to root_path if current_user.id != @item.user.id
+    # リファクタリング② ログインしているユーザーと@itemのユーザーの一致確認
+    # 異なる場合は、トップページへ遷移させる
+  end
 end
