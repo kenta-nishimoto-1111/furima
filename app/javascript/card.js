@@ -35,7 +35,6 @@ const pay = () => {
       document.getElementById("card-exp-year").removeAttribute("name");
 
 
-      debugger
       document.getElementById("charge-form").submit();
     });
   });
