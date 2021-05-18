@@ -3,7 +3,7 @@ class ItemsController < ApplicationController
  # deviseのヘルパーメソッド。ログインしていなければ、ログイン画面へ遷移させる。
 
   def index
-
+    @items = Item.includes(:user).order("created_at DESC")
   end
 
   def new
